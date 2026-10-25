@@ -69,6 +69,197 @@ function existingEditor(fixture: ReturnType<typeof setup>) {
   return { element, field, action };
 }
 
+for (const finish of ["Escape", "Enter", "button", "outside"] as const) {
+  for (const comment of ["untouched", "cleared", "whitespace"] as const) {
+    test(`empty create ${comment} removes its annotation after ${finish}`, async () => {
+      const { host } = await nativeHost();
+      const { binding, input, anchor, dom } = setup();
+      const key = host.key(binding.hostId, binding.agentId);
+      const other = { kind: "workspace_file", path: "keep.txt", selection: { kind: "whole_file" } };
+      host.save(key, { text: "keep body", attachments: [other] });
+      const plugin = installQuoteComposer({ owner: fixtureOwner, discover: async () => host });
+      try {
+        await plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> original", preview: "original", openComment: true });
+        const element = dom.window.document.querySelector<HTMLElement>("[data-paseo-quote-editor]");
+        const field = element?.querySelector("textarea");
+        if (!element || !field) throw new Error("Missing create editor");
+        if (comment === "cleared") {
+          field.value = "temporary comment";
+          field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+        }
+        if (comment !== "untouched") {
+          field.value = comment === "whitespace" ? " \n\t " : "";
+          field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+        }
+        await settle();
+        assert.equal(element.isConnected, true, "an empty field remains editable until dismissed");
+        assert.equal(readQuotes(host.read(key)).length, 1);
+        if (finish === "button") element.shadowRoot?.querySelector<HTMLButtonElement>('[data-action="finish"]')?.click();
+        else if (finish === "outside") input.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true, composed: true }));
+        else field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: finish, bubbles: true, composed: true, cancelable: true }));
+        await settle();
+        assert.equal(readQuotes(host.read(key)).length, 0);
+        assert.equal(element.isConnected, false);
+        assert.deepEqual(host.read(key), { text: "keep body", attachments: [other] });
+      } finally { plugin.dispose(); await host.flush(); dom.window.close(); }
+    });
+  }
+}
+
+for (const cleanupFails of [false, true]) {
+  test(`empty pending create cleanup survives a newer editor with flush failure ${cleanupFails}`, async () => {
+    const { host } = await nativeHost();
+    const { binding, input, anchor, dom } = setup();
+    const key = host.key(binding.hostId, binding.agentId);
+    let release!: () => void, flushes = 0, failCleanup = false;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const controlled: DraftHost = { ...host, async flush() {
+      const at = ++flushes;
+      if (at === 1) await gate;
+      else if (failCleanup) throw new Error("cleanup persistence unavailable");
+      await host.flush();
+    } };
+    const plugin = installQuoteComposer({ owner: fixtureOwner, discover: async () => controlled });
+    try {
+      const first = plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> first", preview: "first", openComment: true });
+      await settle();
+      input.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true, composed: true }));
+      const second = plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> second", preview: "second", openComment: true });
+      const newer = dom.window.document.querySelector<HTMLElement>("[data-paseo-quote-editor]");
+      const field = newer?.querySelector("textarea");
+      if (!newer || !field) throw new Error("Missing newer create editor");
+      field.value = "keep the new comment";
+      field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+      await second; await settle();
+      failCleanup = cleanupFails; release();
+      await first; await settle();
+      const quotes = readQuotes(host.read(key));
+      assert.equal(quotes.length, 1);
+      assert.equal(quotes[0].item.subtitle, "keep the new comment");
+      assert.equal(newer.isConnected, true);
+      assert.equal(dom.window.document.querySelector("[data-paseo-quote-editor] textarea"), field);
+      assert.equal(dom.window.document.activeElement, field);
+      if (cleanupFails) {
+        failCleanup = false;
+        field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true, cancelable: true }));
+        await settle();
+        const retryView = dom.window.document.querySelector<HTMLElement>("[data-paseo-quote-editor]");
+        const retry = retryView?.shadowRoot?.querySelector<HTMLButtonElement>('[data-action="retry"]');
+        assert.notEqual(retryView, newer);
+        assert.equal(retry?.textContent, "重试删除");
+        assert.equal(retry?.hidden, false);
+        assert.equal(dom.window.document.activeElement, input);
+        retry?.click(); await settle();
+        assert.equal(dom.window.document.querySelector("[data-paseo-quote-editor]"), null);
+        assert.equal(readQuotes(host.read(key)).length, 1);
+      }
+    } finally { failCleanup = false; release(); plugin.dispose(); await host.flush(); dom.window.close(); }
+  });
+}
+
+for (const phase of ["discovery", "hydrate", "flush"] as const) {
+  test(`empty create dismissal while ${phase} is pending removes only its annotation`, async () => {
+    const { host } = await nativeHost();
+    const { binding, input, anchor, dom } = setup();
+    const key = host.key(binding.hostId, binding.agentId);
+    const retained = makeQuote("> original", "original", dom.window.location.href);
+    host.save(key, { text: "keep body", attachments: [retained] });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    const controlled: DraftHost = { ...host,
+      async hydrate(draftKey) { if (phase === "hydrate") await gate; await host.hydrate(draftKey); },
+      async flush() { if (phase === "flush") await gate; await host.flush(); },
+    };
+    const plugin = installQuoteComposer({ owner: fixtureOwner, discover: async () => { if (phase === "discovery") await gate; return controlled; } });
+    try {
+      const adding = plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> original", preview: "original", openComment: true });
+      await settle();
+      const element = dom.window.document.querySelector<HTMLElement>("[data-paseo-quote-editor]");
+      const field = element?.querySelector("textarea");
+      if (!element || !field) throw new Error("Missing pending create editor");
+      field.value = "temporary"; field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+      field.value = ""; field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+      field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true, cancelable: true }));
+      release();
+      await adding; await settle();
+      assert.equal(element.isConnected, false);
+      assert.deepEqual(host.read(key), { text: "keep body", attachments: [retained] });
+    } finally { release(); plugin.dispose(); await host.flush(); dom.window.close(); }
+  });
+}
+
+for (const failure of ["hydrate", "flush"] as const) {
+  test(`empty create ${failure} deletion failure retains the same retry and outside focus`, async () => {
+    const { host } = await nativeHost();
+    const { binding, input, anchor, dom } = setup();
+    const key = host.key(binding.hostId, binding.agentId);
+    let fail = false, hold = false;
+    let release: (() => void) | undefined;
+    const controlled: DraftHost = { ...host,
+      async hydrate(draftKey) { if (fail && failure === "hydrate") throw new Error("hydrate unavailable"); await host.hydrate(draftKey); },
+      async flush() {
+        if (hold) await new Promise<void>((resolve) => { release = resolve; });
+        if (fail && failure === "flush") throw new Error("flush unavailable");
+        await host.flush();
+      },
+    };
+    const plugin = installQuoteComposer({ owner: fixtureOwner, discover: async () => controlled });
+    try {
+      await plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> original", preview: "original", openComment: true });
+      const element = dom.window.document.querySelector<HTMLElement>("[data-paseo-quote-editor]");
+      const field = element?.querySelector("textarea");
+      const retry = element?.shadowRoot?.querySelector<HTMLButtonElement>('[data-action="retry"]');
+      if (!element || !field || !retry) throw new Error("Missing create editor");
+      const focus = dom.window.document.createElement("button"); dom.window.document.body.append(focus); focus.focus();
+      fail = true; hold = failure === "flush";
+      focus.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true, composed: true }));
+      await settle();
+      assert.equal(field.disabled, true);
+      if (hold) {
+        assert.equal(element.isConnected, true);
+        field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true, cancelable: true }));
+        assert.equal(element.isConnected, true);
+        hold = false; release?.(); await settle();
+      }
+      assert.equal(element.isConnected, true);
+      assert.equal(retry.hidden, false); assert.equal(retry.textContent, "重试删除");
+      assert.equal(readQuotes(host.read(key)).length, failure === "hydrate" ? 1 : 0);
+      field.value = "cannot replace the deletion command";
+      field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
+      fail = false; retry.click(); await settle();
+      assert.equal(readQuotes(host.read(key)).length, 0);
+      assert.equal(element.isConnected, false);
+      assert.equal(dom.window.document.activeElement, focus);
+    } finally { hold = false; release?.(); plugin.dispose(); await host.flush(); dom.window.close(); }
+  });
+}
+
+test("blank create IME stays open until a dismissal after composition ends", async () => {
+  const { host } = await nativeHost();
+  const { binding, input, anchor, dom } = setup();
+  const plugin = installQuoteComposer({ owner: fixtureOwner, discover: async () => host });
+  try {
+    await plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> original", preview: "original", openComment: true });
+    const element = dom.window.document.querySelector<HTMLElement>("[data-paseo-quote-editor]");
+    const field = element?.querySelector("textarea");
+    if (!element || !field) throw new Error("Missing create editor");
+    field.dispatchEvent(new dom.window.CompositionEvent("compositionstart", { bubbles: true }));
+    field.value = " "; field.dispatchEvent(new dom.window.InputEvent("input", { bubbles: true, isComposing: true }));
+    element.shadowRoot?.querySelector<HTMLButtonElement>('[data-action="finish"]')?.click();
+    field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true, cancelable: true }));
+    input.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true, composed: true }));
+    await settle();
+    assert.equal(element.isConnected, true);
+    assert.equal(readQuotes(host.read(host.key(binding.hostId, binding.agentId))).length, 1);
+    field.dispatchEvent(new dom.window.CompositionEvent("compositionend", { bubbles: true }));
+    await settle(); assert.equal(element.isConnected, true);
+    field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true, composed: true, cancelable: true }));
+    await settle();
+    assert.equal(readQuotes(host.read(host.key(binding.hostId, binding.agentId))).length, 0);
+    assert.equal(element.isConnected, false);
+  } finally { plugin.dispose(); await host.flush(); dom.window.close(); }
+});
+
 for (const dismiss of ["cancel", "Escape", "outside"] as const) {
   test(`existing edit keeps input, blur and composition local before ${dismiss} discards`, async () => {
     const { host } = await nativeHost();
@@ -88,8 +279,10 @@ for (const dismiss of ["cancel", "Escape", "outside"] as const) {
       field.dispatchEvent(new dom.window.CompositionEvent("compositionstart", { bubbles: true }));
       field.value = "unsaved edit拼音";
       field.dispatchEvent(new dom.window.CompositionEvent("compositionend", { bubbles: true }));
+      field.value = "";
+      field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
       await settle();
-      assert.deepEqual(host.read(key), before, "staged edits must not write native attachments");
+      assert.deepEqual(host.read(key), before, "staged edits and clearing must not write native attachments");
       if (dismiss === "cancel") action("cancel").click();
       else if (dismiss === "outside") input.dispatchEvent(new dom.window.Event("pointerdown", { bubbles: true, composed: true }));
       else field.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: dismiss, bubbles: true, composed: true, cancelable: true }));
@@ -101,7 +294,7 @@ for (const dismiss of ["cancel", "Escape", "outside"] as const) {
 }
 
 for (const save of ["button", "Meta", "Control"] as const) {
-  test(`existing edit saves multiline and empty comments through ${save}`, async () => {
+  test(`existing edit saves multiline and removes empty comments through ${save}`, async () => {
     const { host, resolveKeyboardFocusScope } = await nativeHost();
     const fixture = setup(), { binding, input, anchor, dom } = fixture;
     const key = host.key(binding.hostId, binding.agentId);
@@ -110,7 +303,8 @@ for (const save of ["button", "Meta", "Control"] as const) {
     const plugin = installQuoteComposer({ owner: fixtureOwner, discover: async () => host });
     try {
       await plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> original", preview: "original" });
-      for (const comment of ["first line\n第二行", ""]) {
+      for (const comment of ["first line\n第二行", "", " \n\t"]) {
+        if (comment && !comment.trim()) await plugin.add({ composer: input, anchor, agentId: binding.agentId, formattedText: "> original", preview: "original" });
         const { element, field, action } = existingEditor(fixture);
         field.value = comment;
         field.dispatchEvent(new dom.window.Event("input", { bubbles: true }));
@@ -128,8 +322,11 @@ for (const save of ["button", "Meta", "Control"] as const) {
         await settle();
         assert.equal(element.isConnected, false);
         const entries = readQuotes(host.read(key));
-        assert.equal(entries[0].item.text, comment ? `> original\n\n${comment}` : "> original");
-        assert.equal(entries[0].item.subtitle ?? "", comment);
+        assert.equal(entries.length, comment.trim() ? 1 : 0);
+        if (comment.trim()) {
+          assert.equal(entries[0].item.text, `> original\n\n${comment}`);
+          assert.equal(entries[0].item.subtitle, comment);
+        }
         assert.equal(host.read(key)?.text, "keep body");
         assert.deepEqual(host.read(key)?.attachments[0], other);
       }

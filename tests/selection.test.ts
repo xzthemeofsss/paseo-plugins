@@ -65,7 +65,7 @@ test("unload before installation discovery resolves cannot install DOM effects",
   await host.flush(); dom.window.close();
 });
 
-test("两文字入口立即添加、紧凑可选评论、连续输入，Enter/Esc/IME 不发送 Agent", async () => {
+test("两文字入口立即添加、紧凑评论、连续输入，Enter/Esc/IME 不发送 Agent", async () => {
   const { host, resolveKeyboardFocusScope } = await nativeHost();
   const { dom, input, anchor, binding } = setup();
   const install = await selectionBar(host);
@@ -90,8 +90,8 @@ test("两文字入口立即添加、紧凑可选评论、连续输入，Enter/Es
   quote.click();
   const popup = dom.window.document.querySelector("[data-paseo-quote-editor]");
   const field = popup?.querySelector("textarea");
-  if (!(field instanceof dom.window.HTMLTextAreaElement)) throw new Error("Missing optional comment field");
-  assert.equal(field.placeholder, "添加可选评论...");
+  if (!(field instanceof dom.window.HTMLTextAreaElement)) throw new Error("Missing comment field");
+  assert.equal(field.placeholder, "添加评论...");
   assert.equal(field.rows, 1);
   assert.equal(popup?.getAttribute("style")?.includes("width: 294px"), true);
   assert.equal(dom.window.document.activeElement, field);

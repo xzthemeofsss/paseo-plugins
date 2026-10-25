@@ -1,6 +1,24 @@
 {
   "name": "@xzthemeofsss/paseo-quote-notes",
-  "version": "0.2.1",
+  "version": "0.2.2",
+  "description": "Annotate selected chat, file, Markdown, Diff, and terminal text in Paseo with comments.",
+  "keywords": [
+    "chat",
+    "paseo",
+    "paseo-plugin",
+    "quote",
+    "reply"
+  ],
+  "homepage": "https://github.com/xzthemeofsss/paseo-plugins#readme",
+  "bugs": {
+    "url": "https://github.com/xzthemeofsss/paseo-plugins/issues"
+  },
+  "license": "MIT",
+  "author": "xzthemeofsss",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xzthemeofsss/paseo-plugins.git"
+  },
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
@@ -30,23 +48,5 @@
     "typescript": "^5.9.3",
     "zod": "^4.4.3",
     "zustand": "^5.0.8"
-  },
-  "description": "Annotate selected chat, file, Markdown, Diff, and terminal text in Paseo with optional comments.",
-  "license": "MIT",
-  "author": "xzthemeofsss",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/xzthemeofsss/paseo-plugins.git"
-  },
-  "homepage": "https://github.com/xzthemeofsss/paseo-plugins#readme",
-  "bugs": {
-    "url": "https://github.com/xzthemeofsss/paseo-plugins/issues"
-  },
-  "keywords": [
-    "paseo",
-    "paseo-plugin",
-    "quote",
-    "reply",
-    "chat"
-  ]
+  }
 }

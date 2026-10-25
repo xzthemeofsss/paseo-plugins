@@ -1,12 +1,12 @@
 # Codex Style Annotations
 
-Attach selected text to a Paseo conversation and add an optional comment. Capture from chat, file editors, Markdown previews, Diffs, and terminal output. Draft and sent annotations stay compact in a count capsule, with the complete text available when you open it.
+Attach selected text and a comment to a Paseo conversation. Capture from chat, file editors, Markdown previews, Diffs, and terminal output. Draft and sent annotations stay compact in a count capsule, with the complete text available when you open it.
 
 ## Add context without retyping it
 
 1. Select the passage, code, or output you want the agent to use.
 2. Choose **Add to chat**. The annotation appears in the native draft immediately.
-3. Add a comment if needed, then send the draft through Paseo's normal message controls.
+3. Write a comment, then send the draft through Paseo's normal message controls. Closing an empty or whitespace-only comment removes the annotation, including after you erase everything you typed.
 
 For workspace selections, the toolbar shows **Add to {chat}** and defaults to the most recently focused conversation in the same workspace. Use the arrow to choose another chat. The receiving composer does not need to be open. Adding an annotation does not send a message.
 
@@ -20,7 +20,7 @@ For workspace selections, the toolbar shows **Add to {chat}** and defaults to th
 
 ## Work with draft and sent annotations
 
-Preview the draft capsule to read its entries, edit a comment, or remove an annotation. Return to the source while its position is still available. Saved text remains readable after the source location is lost, and draft annotations remain editable.
+Preview the draft capsule to read its entries, edit a comment, or remove an annotation. Saving an empty or whitespace-only comment removes the annotation. Canceling an edit keeps the saved annotation. Return to the source while its position is still available. Saved text remains readable after the source location is lost, and draft annotations remain editable.
 
 Open a sent capsule to read or copy the complete text. Sent annotations are read only. Their complete text includes the comment because Paseo no longer keeps it as separate metadata after sending. Validated pending messages retain their capsule through confirmation. Unsupported rows and rows shown before the native adapter is ready retain native attachment cards.
 
