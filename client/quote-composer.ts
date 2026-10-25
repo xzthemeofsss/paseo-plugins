@@ -82,9 +82,11 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
   type CreatePhase = { kind: "adding" | "ready" } | { kind: "add-error"; retry: () => void };
   type EditCommand = { kind: "save"; comment: string } | { kind: "delete" };
   type EditPhase = { kind: "idle" } | { kind: "writing"; command: EditCommand } | { kind: "error"; command: EditCommand; outcome: Exclude<WriteOutcome, { kind: "committed" }> };
-  type Editor = { kind: "closed" } | { kind: "create"; view: EditorView; phase: CreatePhase; finishRequested: { focus: boolean } | null } | { kind: "edit"; view: EditorView; phase: EditPhase };
+  type Editor = { kind: "closed" } | { kind: "create"; view: EditorView; phase: CreatePhase; finishRequested: { focus: boolean } | null } | { kind: "edit"; view: EditorView; phase: EditPhase; focusOnCommit: boolean };
+  type CreateSession = Extract<Editor, { kind: "create" }>;
   type EditSession = Extract<Editor, { kind: "edit" }>;
   let editor: Editor = { kind: "closed" };
+  const deferredEdits = new Set<EditSession>();
   const decorations = new Map<Projection, Map<QuoteRef["id"], { element: HTMLDivElement; button: HTMLButtonElement; highlights: HTMLDivElement[] }>>();
   const scopeOf = (binding: DraftBinding) => host?.key(binding.hostId, binding.agentId) ?? `${binding.hostId}\0${binding.agentId}`;
   const quotesFor = (binding: DraftBinding) => host ? readQuotes(host.read(scopeOf(binding))) : [];
@@ -138,7 +140,7 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
     if (editor.kind === "closed") return;
     const { view } = editor;
     editor = { kind: "closed" };
-    view.element.remove();
+    view.element.remove(); schedule();
     if (focus && bindingStatus(view.ref.binding) === "ready") (view.origin.isConnected ? view.origin : bindingElement(view.ref.binding)).focus({ preventScroll: true });
   }
   function saveCreateComment(view: EditorView) {
@@ -151,7 +153,10 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
       if (bindingStatus(view.ref.binding) === "scope-changed") { closeEditor(false); return; }
       view.status.textContent = outcome.kind === "committed" ? "已保存" : outcome.reason;
       view.retry.hidden = outcome.kind === "committed";
-      if (outcome.kind === "committed" && editor.finishRequested && !view.composing) closeEditor(editor.finishRequested.focus);
+      if (outcome.kind === "committed" && editor.finishRequested && !view.composing) {
+        if (view.field.value.trim()) closeEditor(editor.finishRequested.focus);
+        else dismissEditor(view, editor.finishRequested.focus);
+      }
     });
   }
   function dismissEditor(view: EditorView, focus: boolean) {
@@ -161,13 +166,17 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
       return;
     }
     editor.finishRequested = { focus };
-    saveCreateComment(view);
+    if (editor.phase.kind === "ready" && !view.field.value.trim()) {
+      const session: EditSession = { kind: "edit", view, phase: { kind: "idle" }, focusOnCommit: focus };
+      editor = session;
+      void submitEdit(session, { kind: "delete" });
+    } else saveCreateComment(view);
   }
   function renderEdit(session: EditSession) {
     const { view, phase } = session;
     const writing = phase.kind === "writing";
     const uncertain = phase.kind === "error" && phase.outcome.kind === "uncertain";
-    view.field.disabled = writing || uncertain;
+    view.field.disabled = writing || uncertain || (phase.kind === "error" && phase.command.kind === "delete");
     for (const button of view.element.shadowRoot?.querySelectorAll<HTMLButtonElement>(".footer button") ?? []) {
       button.disabled = writing || (uncertain && button.dataset.action !== "cancel");
     }
@@ -180,10 +189,16 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
     const feedback = view.status.parentElement;
     if (feedback) feedback.hidden = phase.kind === "idle";
   }
+  function closeEdit(session: EditSession, focus: boolean) {
+    deferredEdits.delete(session);
+    if (editor === session) closeEditor(focus);
+    else session.view.element.remove();
+  }
   async function submitEdit(session: EditSession, command: EditCommand) {
     const { view } = session;
-    if (editor !== session || session.phase.kind === "writing" || view.composing) return;
-    if (bindingStatus(view.ref.binding) === "scope-changed") { closeEditor(false); return; }
+    if ((editor !== session && !deferredEdits.has(session)) || session.phase.kind === "writing" || view.composing) return;
+    if (bindingStatus(view.ref.binding) === "scope-changed") { closeEdit(session, false); return; }
+    if (command.kind === "save" && !command.comment.trim()) command = { kind: "delete" };
     const version = ++view.version;
     session.phase = { kind: "writing", command };
     renderEdit(session);
@@ -193,11 +208,11 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
     else {
       outcome = await mutateQuotes({ host, binding: view.ref.binding, change: { kind: "remove", id: view.ref.id }, isCurrent: () => !lifetime.signal.aborted });
     }
-    if (editor !== session || view.version !== version) return;
-    if (bindingStatus(view.ref.binding) === "scope-changed") { closeEditor(false); return; }
-    if (outcome.kind === "committed") { closeEditor(true); schedule(); return; }
+    if ((editor !== session && !deferredEdits.has(session)) || view.version !== version) return;
+    if (bindingStatus(view.ref.binding) === "scope-changed") { closeEdit(session, false); return; }
+    if (outcome.kind === "committed") { closeEdit(session, session.focusOnCommit); schedule(); return; }
     session.phase = { kind: "error", command, outcome };
-    renderEdit(session); requestLayout();
+    renderEdit(session); requestLayout(); schedule();
   }
   function createEditor(ref: QuoteRef, origin: HTMLElement, input: { kind: "create" | "edit"; comment: string }): EditorView {
     closeEditor(false);
@@ -214,8 +229,8 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
       : `<button type="button" data-action="delete" aria-label="删除注释"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 6h18M9 6V4h6v2M5 6l1 14h12l1-14M10 10v6M14 10v6"/></svg></button><button type="button" data-action="cancel">取消</button><button type="button" data-action="save">保存</button>`;
     shadow.innerHTML = `<style>${CSS}</style><section class="preview editor${input.kind === "edit" ? " edit-card" : ""}" contenteditable="false" role="dialog" aria-label="引用评论"><div class="location"></div><div class="comment-row"><slot name="comment"></slot>${input.kind === "create" ? `<div class="footer">${footer}</div>` : ""}</div>${input.kind === "edit" ? `<div class="footer">${footer}</div>` : ""}<div class="feedback"${input.kind === "edit" ? " hidden" : ""}><div class="status" role="status"></div><button type="button" class="retry" data-action="retry" hidden>重试保存</button></div></section>`;
     const field = document.createElement("textarea");
-    field.slot = "comment"; field.rows = 1; field.placeholder = "添加可选评论..."; field.value = input.comment;
-    field.setAttribute("aria-label", "添加可选评论"); field.setAttribute("data-paseo-quote-comment", "");
+    field.slot = "comment"; field.rows = 1; field.placeholder = "添加评论..."; field.value = input.comment;
+    field.setAttribute("aria-label", "添加评论"); field.setAttribute("data-paseo-quote-comment", "");
     for (const [property, value] of [
       ["all", "unset"], ["display", "block"], ["box-sizing", "border-box"], ["width", "100%"], ["min-height", "36px"], ["max-height", input.kind === "edit" ? "180px" : "160px"],
       ["margin", "0"], ["padding", input.kind === "edit" ? "8px 0" : "8px 36px 8px 0"], ["border", "0"], ["outline", "none"], ["box-shadow", "none"], ["border-radius", "0"],
@@ -281,7 +296,7 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
     if (decoded.kind !== "editable") return;
     const scope = scopeOf(projection.binding);
     const view = createEditor({ binding: projection.binding, id }, origin, { kind: "edit", comment: pending.get(scope)?.get(id)?.comment ?? decoded.annotation.comment });
-    editor = { kind: "edit", view, phase: { kind: "idle" } };
+    editor = { kind: "edit", view, phase: { kind: "idle" }, focusOnCommit: true };
     view.field.focus({ preventScroll: true }); requestLayout();
   }
   function closePreview(focus: boolean) {
@@ -512,6 +527,13 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
   function sync() {
     scheduled = false;
     if (!host || lifetime.signal.aborted) return;
+    for (const session of deferredEdits) {
+      if (bindingStatus(session.view.ref.binding) === "scope-changed") { deferredEdits.delete(session); continue; }
+      if (editor.kind === "closed" && session.phase.kind === "error") {
+        deferredEdits.delete(session); editor = session;
+        document.body.append(session.view.element); renderEdit(session);
+      }
+    }
     const previousHidden = new Set(hidden); hidden.clear();
     const active = new Set<HTMLTextAreaElement>();
     for (const input of document.querySelectorAll("textarea[data-composer-input]")) {
@@ -600,7 +622,8 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
   function addPrepared(binding: DraftBinding, attachment: QuoteAttachment, prepare: () => Promise<QuoteAttachment>, input: { annotationKind: Promise<AnnotationKind>; openComment: boolean; focusComposer: boolean; valid: () => boolean; remember: (scope: string) => void }): Promise<AddResult> {
     const ref: QuoteRef = { id: attachment.item.id, binding };
     const view = input.openComment ? createEditor(ref, bindingElement(binding), { kind: "create", comment: "" }) : null;
-    if (view) { editor = { kind: "create", view, phase: { kind: "adding" }, finishRequested: null }; view.field.focus({ preventScroll: true }); requestLayout(); }
+    const session: CreateSession | null = view ? { kind: "create", view, phase: { kind: "adding" }, finishRequested: null } : null;
+    if (session) { editor = session; session.view.field.focus({ preventScroll: true }); requestLayout(); }
     let inFlight: Promise<AddResult> | null = null;
     const perform = (): Promise<AddResult> => {
       if (inFlight) return inFlight;
@@ -623,7 +646,14 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
           view.scope = scopeOf(binding);
           if (outcome.kind === "not-written" || (outcome.kind === "uncertain" && !quotesFor(binding).some((entry) => entry.item.id === ref.id))) {
             editor.phase = { kind: "add-error", retry: () => { if (editor.kind === "create" && editor.view === view) { editor.phase = { kind: "adding" }; void perform(); } } }; view.status.textContent = outcome.reason; view.retry.hidden = false;
-          } else { editor.phase = { kind: "ready" }; view.status.textContent = outcome.kind === "uncertain" ? outcome.reason : ""; if (view.field.value) saveCreateComment(view); else if (editor.finishRequested) closeEditor(editor.finishRequested.focus); }
+          } else {
+            editor.phase = { kind: "ready" }; view.status.textContent = outcome.kind === "uncertain" ? outcome.reason : "";
+            if (editor.finishRequested) dismissEditor(view, editor.finishRequested.focus);
+            else if (view.field.value) saveCreateComment(view);
+          }
+        } else if (view && session?.finishRequested && !view.field.value.trim() && outcome.kind !== "not-written" && bindingStatus(binding) === "ready") {
+          const cleanup: EditSession = { kind: "edit", view, phase: { kind: "idle" }, focusOnCommit: false };
+          deferredEdits.add(cleanup); await submitEdit(cleanup, { kind: "delete" });
         } else if (view?.field.value && outcome.kind !== "not-written" && bindingStatus(binding) === "ready") void setComment(ref, view.field.value);
         if (!view && outcome.kind === "committed" && input.focusComposer && bindingStatus(binding) === "ready") bindingElement(binding).focus({ preventScroll: true });
         schedule();
@@ -676,6 +706,8 @@ export function installQuoteComposer(options: { owner: InstallationOwner; discov
       window.cancelAnimationFrame(frame); window.clearTimeout(closeTimer);
       document.removeEventListener("pointerdown", outside, true); window.removeEventListener("resize", viewport); window.removeEventListener("scroll", requestLayout, true);
       closeEditor(false); closePreview(false);
+      for (const session of deferredEdits) session.view.element.remove();
+      deferredEdits.clear();
       for (const projection of projections.values()) projection.element.remove();
       for (const markers of decorations.values()) for (const decoration of markers.values()) decoration.element.remove();
       projections.clear(); decorations.clear(); sources.dispose(); pending.clear();

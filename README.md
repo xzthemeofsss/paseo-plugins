@@ -5,7 +5,7 @@
 `paseo-plugins` holds my maintained public Paseo plugins. Codex Style Annotations
 currently lives at the repository root. The plugin ID remains `quote-notes`.
 
-Give your Paseo agent the exact text you mean. Select a passage in a chat, file, Markdown preview, Diff, or terminal, add it to a conversation, and leave a comment when you need one.
+Give your Paseo agent the exact text you mean. Select a passage in a chat, file, Markdown preview, Diff, or terminal, add it to a conversation, and leave a comment.
 
 ![Selected text, an optional comment, and a compact draft annotation. Interface illustration with sample content.](assets/preview.png)
 
@@ -13,7 +13,7 @@ Give your Paseo agent the exact text you mean. Select a passage in a chat, file,
 
 1. Select the text you want the agent to use.
 2. Choose **Add to chat**. The annotation appears in the draft immediately.
-3. Add an optional comment, then send the draft through Paseo's normal message controls.
+3. Write a comment, then send the draft through Paseo's normal message controls. Closing the comment field while it is empty or contains only whitespace removes that annotation, including when you type and then erase everything.
 
 For workspace selections, **Add to {chat}** names the receiving conversation. The toolbar defaults to the most recently focused chat in the same workspace. Use its arrow to choose another chat. The receiving composer does not need to be open.
 
@@ -45,7 +45,7 @@ The gallery illustrations use English labels for explanation. Some current runti
 
 ![Actual draft-summary interface with Chinese sample text, captured at a device scale factor of 3.](assets/interface/draft-summary.png)
 
-Draft and sent annotations collapse into a count capsule. Hover or focus a draft capsule to preview its entries, or click to keep it open. Open an entry's edit card to change its comment or delete the annotation. Click a summary entry to return to its source while its position is still available.
+Draft and sent annotations collapse into a count capsule. Hover or focus a draft capsule to preview its entries, or click to keep it open. Open an entry's edit card to change its comment or delete the annotation. Saving an empty or whitespace-only comment removes the annotation. Canceling an edit keeps the saved annotation. Click a summary entry to return to its source while its position is still available.
 
 | Action | Keyboard behavior |
 | --- | --- |
@@ -88,10 +88,10 @@ Skip the disable command if `quote` is not installed. The runtime ID remains `qu
 To install the source release directly, use:
 
 ```bash
-paseo plugin add git:xzthemeofsss/paseo-plugins --ref v0.2.1
+paseo plugin add git:xzthemeofsss/paseo-plugins --ref v0.2.2
 ```
 
-The marketplace uses its reviewed revision. The direct command above selects the `v0.2.1` source release.
+The marketplace uses its reviewed revision. The direct command above selects the `v0.2.2` source release.
 
 ## Data access and compatibility
 
