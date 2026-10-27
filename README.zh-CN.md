@@ -2,6 +2,8 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+仓库也包含 [Link Pilot · 链接领航](plugins/link-pilot)：分别设置单击和 ⌘ 单击网页链接的打开方式。
+
 `paseo-plugins` 收录我自己维护的公开 Paseo 插件。Codex Style Annotations
 目前位于仓库根目录，插件 ID 仍为 `quote-notes`。
 

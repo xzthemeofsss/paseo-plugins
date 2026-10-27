@@ -3,7 +3,12 @@
 [English](README.md) | [简体中文](README.zh-CN.md)
 
 `paseo-plugins` holds my maintained public Paseo plugins. Codex Style Annotations
-currently lives at the repository root. The plugin ID remains `quote-notes`.
+lives at the repository root. The plugin ID remains `quote-notes`.
+
+| Plugin | Purpose |
+| --- | --- |
+| [Codex Style Annotations](#codex-style-annotations) | Annotate selected text and ask side questions. |
+| [Link Pilot](plugins/link-pilot) | Choose where click and Command-click open assistant web links. |
 
 Give your Paseo agent the exact text you mean. Select a passage in a chat, file, Markdown preview, Diff, or terminal, add it to a conversation, and leave a comment.
 
