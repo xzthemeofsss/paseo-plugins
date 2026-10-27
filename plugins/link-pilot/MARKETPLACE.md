@@ -1,18 +1,18 @@
-# Marketplace submission draft
+# Marketplace submission
 
-Prepared for the [official submission form](https://github.com/getpaseo/plugins/issues/new?template=submit-plugin.yml). No registry submission has been sent.
+Submitted through the official form on 2026-10-27: [submission #1264](https://github.com/getpaseo/plugins/issues/1264), [registry review #1265](https://github.com/getpaseo/plugins/pull/1265). Publication is pending registry approval.
 
 ## Form fields
 
 **Title:** Link Pilot
 
-**Source:** https://github.com/xzthemeofsss/paseo-plugins/tree/codex/link-pilot/plugins/link-pilot
+**Source:** https://github.com/xzthemeofsss/paseo-plugins/tree/ef46ba62a203c89c0d160551a98008d32fed9d07/plugins/link-pilot
 
-**Git reference:** `codex/link-pilot`
+**Git reference:** `ef46ba62a203c89c0d160551a98008d32fed9d07`
 
 **Category:** Utils
 
-The registry reviewer resolves this reference to an exact commit. The source PR targets `main`; the branch source remains usable before merge.
+The submission selects this exact commit. The source PR targets `main`; the submitted artifact remains usable before merge.
 
 ## Listing material
 
@@ -24,11 +24,11 @@ The registry reviewer resolves this reference to an exact commit. The source PR 
 - Icon: `assets/icon.png`
 - Actual interface images: `assets/settings.en.png`, `assets/settings.zh-CN.png`, `assets/settings.dark.en.png`
 
-Public image URLs after this branch is pushed:
+Submitted image URLs:
 
-- https://raw.githubusercontent.com/xzthemeofsss/paseo-plugins/codex/link-pilot/plugins/link-pilot/assets/settings.en.png
-- https://raw.githubusercontent.com/xzthemeofsss/paseo-plugins/codex/link-pilot/plugins/link-pilot/assets/settings.zh-CN.png
-- https://raw.githubusercontent.com/xzthemeofsss/paseo-plugins/codex/link-pilot/plugins/link-pilot/assets/settings.dark.en.png
+- https://raw.githubusercontent.com/xzthemeofsss/paseo-plugins/ef46ba62a203c89c0d160551a98008d32fed9d07/plugins/link-pilot/assets/settings.en.png
+- https://raw.githubusercontent.com/xzthemeofsss/paseo-plugins/ef46ba62a203c89c0d160551a98008d32fed9d07/plugins/link-pilot/assets/settings.zh-CN.png
+- https://raw.githubusercontent.com/xzthemeofsss/paseo-plugins/ef46ba62a203c89c0d160551a98008d32fed9d07/plugins/link-pilot/assets/settings.dark.en.png
 
 ## Reviewer notes
 
