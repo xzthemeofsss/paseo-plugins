@@ -1,0 +1,10 @@
+{
+  "id": "link-pilot",
+  "name": "Link Pilot",
+  "description": "Choose where chat links open for a click or Command-click.",
+  "requirements": {
+    "paseo": ">=0.13.0 <0.14.0"
+  },
+  "icon": "assets/icon.png",
+  "media": ["assets/settings.en.png", "assets/settings.zh-CN.png", "assets/settings.dark.en.png"]
+}
