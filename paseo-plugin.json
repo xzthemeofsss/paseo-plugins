@@ -1,7 +1,13 @@
 {
   "id": "quote-notes",
   "name": "Codex Style Annotations",
-  "description": "Annotate selected chat, file, Markdown, Diff, and terminal text with comments.",
+  "description": "Add selected text from chat, files, Markdown, Diffs, and terminals to a conversation with your comments.",
+  "translations": {
+    "zh-CN": {
+      "name": "Codex 风格注释",
+      "description": "把聊天、文件、Markdown、Diff 和终端中的选文连同评论添加到对话。"
+    }
+  },
   "media": [
     "assets/preview.png",
     "assets/workspace-sources.png",
