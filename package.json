@@ -1,7 +1,7 @@
 {
   "name": "@xzthemeofsss/paseo-quote-notes",
   "version": "0.2.2",
-  "description": "Annotate selected chat, file, Markdown, Diff, and terminal text in Paseo with comments.",
+  "description": "Add selected text from chat, files, Markdown, Diffs, and terminals to a conversation with your comments.",
   "keywords": [
     "chat",
     "paseo",
@@ -22,6 +22,7 @@
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
+    "OVERVIEW.*.md",
     "index.client.tsx",
     "client/",
     "assets/",
