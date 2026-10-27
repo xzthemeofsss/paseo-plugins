@@ -53,4 +53,4 @@ The focused integration suite reads the installed macOS Paseo app's real Markdow
 
 Tested against macOS Paseo 0.13.0: source-pane navigation, both destinations for both gestures, Windows/Linux modifier policy in fixtures, settings read errors, disposal, and changed source context. Windows/Linux desktop operation and native devices have not been independently exercised.
 
-See [the English listing](OVERVIEW.md), [中文介绍](OVERVIEW.zh-CN.md), and [marketplace submission draft](MARKETPLACE.md).
+See [the listing overview](OVERVIEW.md) and [marketplace submission](MARKETPLACE.md). The listing title, description and overview use English in every locale; settings, commands and errors follow Paseo’s language.

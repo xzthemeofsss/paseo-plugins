@@ -1,6 +1,6 @@
 # Marketplace submission
 
-Submitted through the official form on 2026-10-27: [submission #1264](https://github.com/getpaseo/plugins/issues/1264), [registry review #1265](https://github.com/getpaseo/plugins/pull/1265). Publication is pending registry approval.
+Submitted through the official form on 2026-10-27: [submission #1264](https://github.com/getpaseo/plugins/issues/1264), [registry review #1265](https://github.com/getpaseo/plugins/pull/1265). The original artifact was approved and merged. The English-only listing correction needs a new reviewed commit before it reaches the registry.
 
 ## Form fields
 
@@ -16,11 +16,10 @@ The submission selects this exact commit. The source PR targets `main`; the subm
 
 ## Listing material
 
-- English name: Link Pilot
-- Simplified Chinese name: Link Pilot · 链接领航
-- English and Chinese descriptions: `paseo-plugin.json`
-- English overview: `OVERVIEW.md`
-- Chinese overview: `OVERVIEW.zh-CN.md`
+- Name: Link Pilot
+- Description: `paseo-plugin.json`
+- Overview: `OVERVIEW.md`
+- Keep the title, description and overview in English for every listing locale. Do not add manifest listing translations or translated overview files. Runtime settings, commands and errors remain localized.
 - Icon: `assets/icon.png`
 - Actual interface images: `assets/settings.en.png`, `assets/settings.zh-CN.png`, `assets/settings.dark.en.png`
 
@@ -51,4 +50,4 @@ Submitted image URLs:
 - Package dry run includes runtime entries, local imports, overviews and declared images, with no installed development dependencies.
 - Windows/Linux desktop operation, compact/mobile settings layout, and a physical Command-click after this configuration change have not been separately verified. Gesture behavior is covered by the integration fixtures; the earlier local in-app opening fix was confirmed by the user before this release preparation.
 
-Publishing still requires registry review and approval. Uploading the source PR is not marketplace publication.
+Listing updates require a new pinned commit and registry review. Uploading the source PR does not update the published listing.

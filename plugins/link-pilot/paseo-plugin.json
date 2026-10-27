@@ -5,12 +5,6 @@
   "requirements": {
     "paseo": ">=0.13.0 <0.14.0"
   },
-  "translations": {
-    "zh-CN": {
-      "name": "Link Pilot · 链接领航",
-      "description": "分别设置单击和 ⌘ 单击聊天链接时，在 Paseo 内或系统浏览器打开。"
-    }
-  },
   "icon": "assets/icon.png",
   "media": ["assets/settings.en.png", "assets/settings.zh-CN.png", "assets/settings.dark.en.png"]
 }

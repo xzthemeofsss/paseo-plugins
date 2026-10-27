@@ -12,7 +12,6 @@
   "files": [
     "paseo-plugin.json",
     "OVERVIEW.md",
-    "OVERVIEW.*.md",
     "index.client.tsx",
     "index.server.ts",
     "client/",
@@ -25,7 +24,7 @@
     "test": "node --import tsx --test tests/*.test.tsx",
     "probe": "node --import tsx scripts/probe.ts",
     "lint": "oxlint client shared scripts tests index.client.tsx index.server.ts",
-    "format": "oxfmt client shared scripts tests index.client.tsx index.server.ts paseo-plugin.json package.json tsconfig.json tsconfig.test.json README.md OVERVIEW.md OVERVIEW.zh-CN.md MARKETPLACE.md assets/README.md"
+    "format": "oxfmt client shared scripts tests index.client.tsx index.server.ts paseo-plugin.json package.json tsconfig.json tsconfig.test.json README.md OVERVIEW.md MARKETPLACE.md assets/README.md"
   },
   "devDependencies": {
     "@getpaseo/plugin": "0.13.0",
