@@ -44,8 +44,9 @@ Public image URLs after this branch is pushed:
 ## Validation, 2026-10-27
 
 - Typecheck and lint pass.
-- 46 focused integration tests pass against the installed macOS Paseo 0.13.0 Markdown renderer and pure routing/file-classification modules. Controlled browser stores verify the source pane and both destinations for click and Command/Ctrl-click.
-- Settings were saved in the real client, survived a page reload, and were reset to defaults. English, Chinese and dark-theme settings were checked in the official web client against the local 0.13.0 daemon. Images are raw screenshots of that settings page.
+- Two translation tests pass. All 9 Paseo locales have complete resource keys. A mounted React fixture and the SDK’s actual translation runtime verify live language changes for settings text, registered titles, command labels and transient errors without remounting.
+- 46 link integration tests pass against the installed macOS Paseo 0.13.0 Markdown renderer and pure routing/file-classification modules. Controlled browser stores verify the source pane and both destinations for click and Command/Ctrl-click.
+- Settings were saved in the real client, survived a page reload, and remain saved after simplifying the page to its two destination selectors. English, Chinese and dark-theme settings were checked in the official web client against the local 0.13.0 daemon. Images are raw screenshots of that settings page.
 - Local installation loads as `running`; the earlier `in-app-links` prototype is disabled.
 - Package dry run includes runtime entries, local imports, overviews and declared images, with no installed development dependencies.
 - Windows/Linux desktop operation, compact/mobile settings layout, and a physical Command-click after this configuration change have not been separately verified. Gesture behavior is covered by the integration fixtures; the earlier local in-app opening fix was confirmed by the user before this release preparation.

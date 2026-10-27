@@ -7,7 +7,7 @@ Choose where a click takes you from an assistant's web link: a browser tab in th
 | Click                                               | In Paseo       | In Paseo / System browser |
 | Command-click on macOS; Ctrl-click on Windows/Linux | System browser | In Paseo / System browser |
 
-Open **Settings → Plugins → Link Pilot → Link behavior**, or search for **Link Pilot settings** in Command Center. Changes save automatically to the host installation. Each eligible click reads current settings, including changes made in another window. The settings page follows Paseo's English or Chinese language setting.
+Open **Settings → Plugins → Link Pilot → Link behavior**, or search for **Link Pilot settings** in Command Center. Changes save automatically to the host installation. Each eligible click reads current settings, including changes made in another window. Settings, command labels and error messages follow Paseo’s language, with Arabic, English, Spanish, French, Japanese, Korean, Brazilian Portuguese, Russian and Simplified Chinese translations.
 
 Enable Link Pilot on one host per app. That installation’s preferences apply to assistant chat links across connected hosts.
 
